@@ -16,13 +16,4 @@ Cloud Transcode (CT) is an example of project using this SDK.
 
 CT transcodes media files at scale using the CPE stack. It uses this SDK to implement its Activities and to report back to client applications that submitted jobs to the CPE stack.
 
-**See:** https://github.com/sportarchive/CloudProcessingEngine
-
-## Install
-
-Composer package:<br>
-https://packagist.org/packages/sportarchive/cloud-processing-engine-sdk
-
-## SDK Documentation
-
-http://sportarchive.github.io/CloudProcessingEngine-SDK/
+**See:** https://github.com/sportarchive/CloudTranscode
