@@ -113,8 +113,8 @@ abstract class CpeActivity
                                          $this->logKey);
 
                 // Notify the client if any
-                if ($this->client)
-                    $this->client->onException($context, $e);
+                // if ($this->client)
+                //     $this->client->onException($context, $e);
             }
             
             try {
