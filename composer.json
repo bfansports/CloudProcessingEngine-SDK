@@ -1,8 +1,8 @@
 {
-    "name": "sportarchive/cloud-processing-engine-sdk",
+    "name": "bfansports/cloud-processing-engine-sdk",
     "description": "PHP SDK for the Cloud Processing Engine activities. Use this SDK to create your custom activities for the CloudTranscode project",
     "keywords": ["Cloud Transcode"],
-    "homepage": "https://github.com/sportarchive/CloudProcessingEngine-SDK",
+    "homepage": "https://github.com/bfansports/CloudProcessingEngine-SDK",
     "type": "library",
     "authors": [
 	{
