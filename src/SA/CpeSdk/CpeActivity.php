@@ -27,6 +27,7 @@ abstract class CpeActivity
     public $client;           // Interface to the client application
 
     public $input;            // Input JSON for this activity
+    public $inputFilePath;    // Can be used by child class to reference an input file. Will be cleaned up when job is done.
     public $token;            // Sfn token for this activity
     public $arn;              // The ARN of the activity
     public $name;             // The Name of the activity
@@ -69,7 +70,7 @@ abstract class CpeActivity
             $this->cpeLogger->logOut("INFO",
                                      basename(__FILE__),
                                      "Instantiate Client Interface '$className' from '$clientClassPath'");
-            
+
             require_once($clientClassPath);
             // Instanciate Client class, which should have the same name than the filename
             $this->client = new $className($this->cpeLogger);
@@ -116,7 +117,7 @@ abstract class CpeActivity
                 // if ($this->client)
                 //     $this->client->onException($context, $e);
             }
-            
+
             try {
                 // Do we have a new activity?
                 if (isset($task['taskToken']) && $task['taskToken'] != '') {
@@ -132,7 +133,7 @@ abstract class CpeActivity
                     $this->token  = $task['taskToken'];
                     if ($this->client)
                         $this->client->logKey = $this->logKey;
-                    
+
                     // Validate the JSON input and set `$this->input`
                     $this->doInputValidation($task['input']);
 
@@ -149,11 +150,17 @@ abstract class CpeActivity
             } catch (\Exception $e) {
                 // Notify Sfn that the activity has failed
                 $this->activityFail($this->name."Exception", $e->getMessage());
+            } finally {
+                if (!empty($this->inputFilePath)) {
+                    // Remove input file that may have been used. Just to be sure.
+                    unlink($this->inputFilePath);
+                    $this->inputFilePath = null;
+                }
             }
 
         } while (42);
     }
-    
+
     /**
      * Perform JSON input validation
      * Decode JSON to Associative array
@@ -181,7 +188,7 @@ abstract class CpeActivity
             'cause' => $cause,
             'taskToken' => $this->token
         ];
-                                                 
+
         try {
             $this->cpeLogger->logOut("ERROR", basename(__FILE__),
                                      "\033[1m[$error]\033[0m $cause",
