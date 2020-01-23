@@ -37,6 +37,7 @@ abstract class CpeActivity
     const NO_ACTIVITY_NAME    = "NO_ACTIVITY_NAME";
     const NO_ACTIVITY_ARN     = "NO_ACTIVITY_ARN";
     const NO_INPUT            = "NO_INPUT";
+    const NO_TASK_TOKEN       = "NO_TASK_TOKEN";
     const INPUT_INVALID       = "INPUT_INVALID";
 
     public function __construct($clientClassPath = null, $params, $debug, $cpeLogger)
@@ -161,6 +162,70 @@ abstract class CpeActivity
         } while (42);
     }
 
+    public function doActivityOnce($task)
+    {
+        $context = [
+            'activityArn' => $this->arn,
+            'workerName'  => $this->name
+        ];
+
+        $this->cpeLogger->logOut("INFO", basename(__FILE__),
+                                 "Starting '$this->name' once");
+    
+        // Get info from input
+        // Get task from env
+        $this->cpeLogger->logOut("INFO", basename(__FILE__),
+                                 "doActivityOnce not done");
+        if (getenv('SNF_ACTIVITY_ARN')) {
+            $arn = getenv('SNF_ACTIVITY_ARN');
+        }
+        else {
+          throw new \SA\CpeSdk\CpeException("Missing task token", self::NO_TASK_TOKEN);
+        }
+
+        exit(0);
+
+        try {
+            // Do we have a new activity?
+            if (isset($task['taskToken']) && $task['taskToken'] != '') {
+
+                $this->cpeLogger->logOut("INFO", basename(__FILE__),
+                                         "\033[1mNew activity '$this->name' triggered!\033[0m Token: ".$task['taskToken'].".\nSee the Log file for this token: ".$this->cpeLogger->logPath);
+
+                // Set the logKey so a new log file will be created just for this Execution
+                $this->logKey = substr($task['taskToken'],
+                                       strlen($task['taskToken'])-16,
+                                       strlen($task['taskToken']) - (strlen($task['taskToken']) - 16));
+                $this->logKey = preg_replace('/[\\\\\/\%\[\]\.\(\)-\/]/s', "_", $this->logKey);
+                $this->token  = $task['taskToken'];
+                if ($this->client)
+                    $this->client->logKey = $this->logKey;
+
+                // Validate the JSON input and set `$this->input`
+                $this->doInputValidation($task['input']);
+
+                // Notify the client if any
+                if ($this->client)
+                    $this->client->onStart($task);
+
+                // Call the user callback function with the activity input for processing
+                $result = $this->process($task);
+
+                // Execution successful. We mark it as such and return the output to Sfn
+                $this->activitySuccess($result);
+            }
+        } catch (\Exception $e) {
+            // Notify Sfn that the activity has failed
+            $this->activityFail($this->name."Exception", $e->getMessage());
+        } finally {
+            if (!empty($this->inputFilePath)) {
+                // Remove input file that may have been used. Just to be sure.
+                unlink($this->inputFilePath);
+                $this->inputFilePath = null;
+            }
+        }
+
+    }
     /**
      * Perform JSON input validation
      * Decode JSON to Associative array
@@ -194,11 +259,14 @@ abstract class CpeActivity
                                      "\033[1m[$error]\033[0m $cause",
                                      $this->logKey);
 
-            $this->cpeSfnHandler->sfn->sendTaskFailure($context);
+            if ($this->debug == false)
+            {
+              $this->cpeSfnHandler->sfn->sendTaskFailure($context);
 
-            // Notify the client if any
-            if ($this->client)
-                $this->client->onFail($this->token, $error, $cause);
+              // Notify the client if any
+              if ($this->client)
+                  $this->client->onFail($this->token, $error, $cause);
+            }
 
         } catch (\Exception $e) {
             $this->cpeLogger->logOut("ERROR", basename(__FILE__),
@@ -234,11 +302,14 @@ abstract class CpeActivity
                                      "\033[1mNotify Sfn that activity has completed!\033[0m",
                                      $this->logKey);
 
-            $this->cpeSfnHandler->sfn->sendTaskSuccess($context);
+            if ($this->debug == false)
+            {
+              $this->cpeSfnHandler->sfn->sendTaskSuccess($context);
 
-            // Notify the client if any
-            if ($this->client)
-                $this->client->onSuccess($this->token, $output);
+              // Notify the client if any
+              if ($this->client)
+                  $this->client->onSuccess($this->token, $output);
+            }
 
         } catch (\Exception $e) {
             $this->cpeLogger->logOut("ERROR", basename(__FILE__),
@@ -271,11 +342,14 @@ abstract class CpeActivity
                                      "\033[1mSending heartbeat to Sfn ...\033[0m",
                                      $this->logKey);
 
-            $this->cpeSfnHandler->sfn->sendTaskHeartbeat($context);
+            if ($this->debug == false)
+            {
+              $this->cpeSfnHandler->sfn->sendTaskHeartbeat($context);
 
-            // Notify the client if any
-            if ($this->client)
-                $this->client->onHeartbeat($this->token, $data);
+              // Notify the client if any
+              if ($this->client)
+                  $this->client->onHeartbeat($this->token, $data);
+            }
 
         } catch (\Exception $e) {
             $this->cpeLogger->logOut("ERROR", basename(__FILE__),
