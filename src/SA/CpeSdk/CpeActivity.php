@@ -86,7 +86,7 @@ abstract class CpeActivity
     /**
      * This must be called fro your activity to start listening for task
      * Perform Sfn long polling and call user callback function when receiving new activity
-     * The loop duration parameters is there to exist the process after x seconds
+     * The loop duration parameters is there to exist the process after x minutes
      *
      */
     public function doActivity($loop_duration = -1)
