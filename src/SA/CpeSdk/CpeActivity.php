@@ -86,9 +86,10 @@ abstract class CpeActivity
     /**
      * This must be called fro your activity to start listening for task
      * Perform Sfn long polling and call user callback function when receiving new activity
+     * The loop duration parameters is there to exist the process after x minutes
      *
      */
-    public function doActivity()
+    public function doActivity($loop_duration = -1)
     {
         $context = [
             'activityArn' => $this->arn,
@@ -106,8 +107,14 @@ abstract class CpeActivity
                                              "Polling for '$this->name' activity...");
 
                 // Perform Sfn long polling and wait for new tasks to process
+                // Timeout after 60 seconds
                 $task = $this->cpeSfnHandler->sfn->getActivityTask($context);
-
+                if ($loop_duration > -1)
+                {
+                  $loop_duration -= 1;
+                  if ($loop_duration == 0)
+                      break;
+                }
             } catch (\Exception $e) {
                 $this->cpeLogger->logOut("ERROR", basename(__FILE__),
                                          "Sfn getActivityTask Failed! " . $e->getMessage(),
