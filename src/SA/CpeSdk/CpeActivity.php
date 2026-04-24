@@ -115,7 +115,7 @@ abstract class CpeActivity
                   if ($loop_duration == 0)
                       break;
                 }
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 $this->cpeLogger->logOut("ERROR", basename(__FILE__),
                                          "Sfn getActivityTask Failed! " . $e->getMessage(),
                                          $this->logKey);
@@ -154,7 +154,7 @@ abstract class CpeActivity
                     // Execution successful. We mark it as such and return the output to Sfn
                     $this->activitySuccess($result);
                 }
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 // Notify Sfn that the activity has failed
                 $this->activityFail($this->name."Exception", $e->getMessage());
             } finally {
@@ -207,7 +207,7 @@ abstract class CpeActivity
             if ($this->client)
                 $this->client->onFail($this->token, $error, $cause);
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->cpeLogger->logOut("ERROR", basename(__FILE__),
                                      "Unable to send 'Task Failure' to Sfn! " . $e->getMessage(),
                                      $this->logKey);
@@ -247,7 +247,7 @@ abstract class CpeActivity
             if ($this->client)
                 $this->client->onSuccess($this->token, $output);
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->cpeLogger->logOut("ERROR", basename(__FILE__),
                                      "Unable to send 'Task success' to Sfn! " . $e->getMessage(),
                                      $this->logKey);
@@ -284,7 +284,7 @@ abstract class CpeActivity
             if ($this->client)
                 $this->client->onHeartbeat($this->token, $data);
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->cpeLogger->logOut("ERROR", basename(__FILE__),
                                      "Unable to send 'Task Heartbeat' to Sfn! " . $e->getMessage(),
                                      $this->logKey);
