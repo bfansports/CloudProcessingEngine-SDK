@@ -86,9 +86,10 @@ abstract class CpeActivity
     /**
      * This must be called fro your activity to start listening for task
      * Perform Sfn long polling and call user callback function when receiving new activity
+     * The loop duration parameters is there to exist the process after x minutes
      *
      */
-    public function doActivity()
+    public function doActivity($loop_duration = -1)
     {
         $context = [
             'activityArn' => $this->arn,
@@ -106,9 +107,15 @@ abstract class CpeActivity
                                              "Polling for '$this->name' activity...");
 
                 // Perform Sfn long polling and wait for new tasks to process
+                // Timeout after 60 seconds
                 $task = $this->cpeSfnHandler->sfn->getActivityTask($context);
-
-            } catch (\Exception $e) {
+                if ($loop_duration > -1)
+                {
+                  $loop_duration -= 1;
+                  if ($loop_duration == 0)
+                      break;
+                }
+            } catch (\Throwable $e) {
                 $this->cpeLogger->logOut("ERROR", basename(__FILE__),
                                          "Sfn getActivityTask Failed! " . $e->getMessage(),
                                          $this->logKey);
@@ -147,7 +154,7 @@ abstract class CpeActivity
                     // Execution successful. We mark it as such and return the output to Sfn
                     $this->activitySuccess($result);
                 }
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 // Notify Sfn that the activity has failed
                 $this->activityFail($this->name."Exception", $e->getMessage());
             } finally {
@@ -200,7 +207,7 @@ abstract class CpeActivity
             if ($this->client)
                 $this->client->onFail($this->token, $error, $cause);
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->cpeLogger->logOut("ERROR", basename(__FILE__),
                                      "Unable to send 'Task Failure' to Sfn! " . $e->getMessage(),
                                      $this->logKey);
@@ -240,7 +247,7 @@ abstract class CpeActivity
             if ($this->client)
                 $this->client->onSuccess($this->token, $output);
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->cpeLogger->logOut("ERROR", basename(__FILE__),
                                      "Unable to send 'Task success' to Sfn! " . $e->getMessage(),
                                      $this->logKey);
@@ -277,7 +284,7 @@ abstract class CpeActivity
             if ($this->client)
                 $this->client->onHeartbeat($this->token, $data);
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->cpeLogger->logOut("ERROR", basename(__FILE__),
                                      "Unable to send 'Task Heartbeat' to Sfn! " . $e->getMessage(),
                                      $this->logKey);
