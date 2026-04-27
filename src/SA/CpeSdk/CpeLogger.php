@@ -55,8 +55,7 @@ class CpeLogger
             "message" => $message
         ];
 
-        if ($printOut)
-            $this->printOut = $printOut;
+        $this->printout = $printOut;
     
         if ($logKey)
             $log["logKey"] = $logKey;
