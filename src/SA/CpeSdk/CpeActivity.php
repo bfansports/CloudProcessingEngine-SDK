@@ -39,7 +39,7 @@ abstract class CpeActivity
     const NO_INPUT            = "NO_INPUT";
     const INPUT_INVALID       = "INPUT_INVALID";
 
-    public function __construct($clientClassPath = null, $params, $debug, $cpeLogger)
+    public function __construct($clientClassPath, $params, $debug, $cpeLogger)
     {
         $this->debug            = $debug;
         $this->params           = $params;
@@ -158,7 +158,7 @@ abstract class CpeActivity
                 // Notify Sfn that the activity has failed
                 $this->activityFail($this->name."Exception", $e->getMessage());
             } finally {
-                if (!empty($this->inputFilePath)) {
+                if (!empty($this->inputFilePath) && file_exists($this->inputFilePath)) {
                     // Remove input file that may have been used. Just to be sure.
                     unlink($this->inputFilePath);
                     $this->inputFilePath = null;
